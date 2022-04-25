@@ -206,6 +206,8 @@ def file_upload_to_s3(doc, method):
     """
     check and upload files to s3. the path check and
     """
+    if not doc.file_url or not os.path.isfile(doc.file_url):
+        return
     s3_upload = S3Operations()
     path = doc.file_url
     site_path = frappe.utils.get_site_path()

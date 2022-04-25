@@ -339,7 +339,7 @@ def s3_file_regex_match(file_url):
     return re.match(
         r'^(https:|/api/method/frappe_s3_attachment.controller.generate_file)',
         file_url
-    )
+    ) or re.match (r'^(https:|amazonaws.com)',file_url)
 
 
 @frappe.whitelist()

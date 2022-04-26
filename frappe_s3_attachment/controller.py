@@ -246,7 +246,6 @@ def file_upload_to_s3(doc, method):
                 s3_upload.BUCKET,
                 key
             )
-        os.remove(file_path)
         frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
             old_parent=%s, content_hash=%s WHERE name=%s""", (
             file_url, 'Home/Attachments', 'Home/Attachments', key, doc.name))
@@ -259,6 +258,7 @@ def file_upload_to_s3(doc, method):
 
         frappe.db.commit()
         doc.reload()
+        os.remove(file_path)
 
 
 @frappe.whitelist()
@@ -323,10 +323,11 @@ def upload_existing_files_s3(name, file_name):
                 s3_upload.BUCKET,
                 key
             )
-        doc = frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
+        frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
             old_parent=%s, content_hash=%s WHERE name=%s""", (
             file_url, 'Home/Attachments', 'Home/Attachments', key, doc.name))
         frappe.db.commit()
+        doc.reload()
         # remove file when db have committed
         os.remove(file_path)
     else:

@@ -210,7 +210,7 @@ def file_upload_to_s3(doc, method):
         'S3 File Attachment',
         'S3 File Attachment',
     )
-    if not s3_settings_doc.upload_file_to_s3 or not doc.file_url or not doc.exists_on_disk():
+    if not (s3_settings_doc.upload_file_to_s3 and doc.file_url and doc.exists_on_disk()):
         return
     s3_upload = S3Operations()
     path = doc.file_url

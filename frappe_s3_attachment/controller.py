@@ -5,6 +5,7 @@ import string
 import datetime
 import re
 import os
+import urllib
 
 import boto3
 import magic
@@ -179,16 +180,17 @@ class S3Operations(object):
         :param key: s3 object key
         """
         if self.s3_settings_doc.signed_url_expiry_time:
-            self.signed_url_expiry_time = self.s3_settings_doc.signed_url_expiry_time # noqa
+            self.signed_url_expiry_time = self.s3_settings_doc.signed_url_expiry_time  # noqa
         else:
             self.signed_url_expiry_time = 120
         params = {
-                'Bucket': self.BUCKET,
-                'Key': key,
+            'Bucket': self.BUCKET,
+            'Key': key,
 
         }
         if file_name:
-            params['ResponseContentDisposition'] = 'filename={}'.format(file_name)
+            encoded_file_name = urllib.parse.quote(file_name)
+            params['ResponseContentDisposition'] = 'filename={}'.format(encoded_file_name)
 
         url = self.S3_CLIENT.generate_presigned_url(
             'get_object',
@@ -204,6 +206,12 @@ def file_upload_to_s3(doc, method):
     """
     check and upload files to s3. the path check and
     """
+    s3_settings_doc = frappe.get_doc(
+        'S3 File Attachment',
+        'S3 File Attachment',
+    )
+    if not (s3_settings_doc.upload_file_to_s3 and doc.file_url and doc.exists_on_disk()):
+        return
     s3_upload = S3Operations()
     path = doc.file_url
     site_path = frappe.utils.get_site_path()
@@ -213,7 +221,10 @@ def file_upload_to_s3(doc, method):
     else:
         parent_doctype = doc.attached_to_doctype
         parent_name = doc.attached_to_name
-    ignore_s3_upload_for_doctype = frappe.local.conf.get('ignore_s3_upload_for_doctype') or ['Data Import']
+    if not parent_doctype or not parent_name:
+        return
+    ignore_s3_upload_for_doctype = frappe.local.conf.get(
+        'ignore_s3_upload_for_doctype') or ['Data Import']
     if parent_doctype not in ignore_s3_upload_for_doctype:
         if not doc.is_private:
             file_path = site_path + '/public' + path
@@ -227,22 +238,27 @@ def file_upload_to_s3(doc, method):
 
         if doc.is_private:
             method = "frappe_s3_attachment.controller.generate_file"
-            file_url = """/api/method/{0}?key={1}&file_name={2}""".format(method, key, doc.file_name)
+            file_url = """/api/method/{0}?key={1}&file_name={2}""".format(
+                method, key, doc.file_name)
         else:
             file_url = '{}/{}/{}'.format(
                 s3_upload.S3_CLIENT.meta.endpoint_url,
                 s3_upload.BUCKET,
                 key
             )
-        os.remove(file_path)
-        doc = frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
+        frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
             old_parent=%s, content_hash=%s WHERE name=%s""", (
             file_url, 'Home/Attachments', 'Home/Attachments', key, doc.name))
 
-        if frappe.get_meta(parent_doctype).get('image_field'):
-            frappe.db.set_value(parent_doctype, parent_name, frappe.get_meta(parent_doctype).get('image_field'), file_url)
+        # From this PR, this code is unuseful
+        # https://github.com/zerodha/frappe-attachments-s3/pull/39
+        # if frappe.get_meta(parent_doctype).get('image_field'):
+        #     frappe.db.set_value(parent_doctype, parent_name, frappe.get_meta(
+        #         parent_doctype).get('image_field'), file_url)
 
         frappe.db.commit()
+        doc.reload()
+        os.remove(file_path)
 
 
 @frappe.whitelist()
@@ -258,6 +274,7 @@ def generate_file(key=None, file_name=None):
     else:
         frappe.local.response['body'] = "Key not found."
     return
+
 
 @frappe.whitelist()
 def generate_signed_url(key=None, file_name=None):
@@ -285,6 +302,8 @@ def upload_existing_files_s3(name, file_name):
         site_path = frappe.utils.get_site_path()
         parent_doctype = doc.attached_to_doctype
         parent_name = doc.attached_to_name
+        if not parent_doctype or not parent_name:
+            return
         if not doc.is_private:
             file_path = site_path + '/public' + path
         else:
@@ -304,11 +323,13 @@ def upload_existing_files_s3(name, file_name):
                 s3_upload.BUCKET,
                 key
             )
-        os.remove(file_path)
-        doc = frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
+        frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
             old_parent=%s, content_hash=%s WHERE name=%s""", (
             file_url, 'Home/Attachments', 'Home/Attachments', key, doc.name))
         frappe.db.commit()
+        doc.reload()
+        # remove file when db have committed
+        os.remove(file_path)
     else:
         pass
 
@@ -335,9 +356,16 @@ def migrate_existing_files():
     )
     for file in files_list:
         if file['file_url']:
-            if not s3_file_regex_match(file['file_url']):
+            if not s3_file_regex_match(file['file_url']) and is_file_exists(file['name']):
                 upload_existing_files_s3(file['name'], file['file_name'])
     return True
+
+
+def is_file_exists(file_name):
+    if frappe.db.exists('File', {'name': file_name}):
+        doc = frappe.get_doc('File', file_name)
+        return doc.exists_on_disk()
+    return False
 
 
 def delete_from_cloud(doc, method):

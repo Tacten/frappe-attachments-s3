@@ -1,2 +1,2 @@
 boto3~=1.17.53
-python-magic~=1.26.4
+python-magic~=0.4.27

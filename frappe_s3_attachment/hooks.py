@@ -129,3 +129,6 @@ doc_events = {
 # 	"frappe.desk.doctype.event.event.get_events": "frappe_s3_attachment.event.get_events"
 # }
 
+override_doctype_class = {
+    "File": "frappe_s3_attachment.override_method.file.MyFile"
+}

@@ -261,7 +261,7 @@ def file_upload_to_s3(doc, method):
         os.remove(file_path)
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def generate_file(key=None, file_name=None):
     """
     Function to stream file from s3.

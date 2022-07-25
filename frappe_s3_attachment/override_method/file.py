@@ -2,7 +2,7 @@ import frappe
 import os
 import io
 import zipfile
-from urllib.request import urlopen
+from urllib import request
 
 from frappe.utils import (cint, encode, get_files_path, get_url)
 from frappe.core.doctype.file.file import File
@@ -80,8 +80,9 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
-            print('file_path', file_path)
-            with urlopen(file_path) as f:
+            opener = request.build_opener()
+            opener.addheaders.append(('Cookie', f'sid={frappe.session.sid}'))
+            with opener.open(file_path) as f:
                 content = f.read()
         else:
             with io.open(encode(file_path), mode="rb") as f:

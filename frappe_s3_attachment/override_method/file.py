@@ -5,12 +5,21 @@ import zipfile
 from urllib import request
 
 from frappe.utils import (cint, encode, get_files_path, get_url)
-from frappe.core.doctype.file.file import File
+from frappe.core.doctype.file.file import (File, get_content_hash)
 from six import PY2
-from six.moves.urllib.parse import unquote
+from six.moves.urllib.parse import (quote, unquote)
 
 
 class MyFile(File):
+    def generate_content_hash(self):
+        if self.content_hash or not self.file_url or self.file_url.startswith("http"):
+            return
+        try:
+            content = self.get_content()
+            self.content_hash = get_content_hash(content)
+        except IOError:
+            frappe.throw(_("File {0} does not exist").format(self.file_url))
+
     def validate_url(self):
         if self.file_url.startswith("/api/method/frappe_s3_attachment.controller.generate_file"):
             return
@@ -53,7 +62,11 @@ class MyFile(File):
             file_path = get_files_path(*file_path.split("/files/", 1)[1].split("/"))
 
         elif file_path.startswith("/api/"):
-            file_path = get_url(file_path)
+            deli_str = '&file_name='
+            idx_file_name = file_path.index(deli_str) + len(deli_str)
+            file_name = file_path[idx_file_name:]
+            quote_file_path = file_path[0:idx_file_name] + quote(file_name)
+            file_path = get_url(quote_file_path)
 
         elif file_path.startswith("http"):
             pass
@@ -101,7 +114,16 @@ class MyFile(File):
         if not self.file_url.endswith(".zip"):
             frappe.throw(_("{0} is not a zip file").format(self.file_name))
 
-        zip_path = self.get_full_path()
+        file_path = self.get_full_path()
+        
+        if file_path.startswith("http"):
+            opener = request.build_opener()
+            opener.addheaders.append(('Cookie', f'sid={frappe.session.sid}'))
+            with opener.open(file_path) as f:
+                content = f.read()
+                zip_path = io.BytesIO(content)
+        else:
+            zip_path = file_path
 
         files = []
         with zipfile.ZipFile(zip_path) as z:

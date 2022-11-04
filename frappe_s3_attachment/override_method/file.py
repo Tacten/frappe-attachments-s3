@@ -114,7 +114,16 @@ class MyFile(File):
         if not self.file_url.endswith(".zip"):
             frappe.throw(_("{0} is not a zip file").format(self.file_name))
 
-        zip_path = self.get_full_path()
+        file_path = self.get_full_path()
+        
+        if file_path.startswith("http"):
+            opener = request.build_opener()
+            opener.addheaders.append(('Cookie', f'sid={frappe.session.sid}'))
+            with opener.open(file_path) as f:
+                content = f.read()
+                zip_path = io.BytesIO(content)
+        else:
+            zip_path = file_path
 
         files = []
         with zipfile.ZipFile(zip_path) as z:

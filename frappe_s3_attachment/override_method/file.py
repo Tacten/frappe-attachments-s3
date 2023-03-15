@@ -3,7 +3,7 @@ import os
 import io
 import zipfile
 from urllib import request
-# import requests
+import requests
 
 from frappe.utils import (cint, encode, get_files_path, get_url)
 from frappe.core.doctype.file.file import (File, get_content_hash)
@@ -94,21 +94,22 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
-            # headers = {
-            #     'User-Agent': 'Mozilla/5.0',
-            #     'Cookie': f'sid={frappe.session.sid}'
-            # }
-            # session_obj = requests.Session()
-            # response = session_obj.get(file_path, headers=headers)
-            # content = response.content
-            opener = request.build_opener()
-            opener.addheaders = [
-                ('User-Agent', 'Mozilla/5.0'),
-                ('Cookie', f'sid={frappe.session.sid}')
-            ]
-            # frappe.msgprint(f'sid={frappe.session.sid}')
-            with opener.open(file_path) as f:
-                content = f.read()
+            headers = {
+                'User-Agent': 'Mozilla/5.0',
+                'Cookie': f'sid={frappe.session.sid}'
+            }
+            session_obj = requests.Session()
+            response = session_obj.get(file_path, headers=headers)
+            frappe.msgprint(f'statuscode = {response.status_code}, content = {response.content}')
+            content = response.content
+            # opener = request.build_opener()
+            # opener.addheaders = [
+            #     ('User-Agent', 'Mozilla/5.0'),
+            #     ('Cookie', f'sid={frappe.session.sid}')
+            # ]
+            # # frappe.msgprint(f'sid={frappe.session.sid}')
+            # with opener.open(file_path) as f:
+            #     content = f.read()
         else:
             with io.open(encode(file_path), mode="rb") as f:
                 content = f.read()

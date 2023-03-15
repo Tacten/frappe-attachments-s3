@@ -94,7 +94,10 @@ class MyFile(File):
                 content = f.read()
         elif file_path.startswith("http"):
             opener = request.build_opener()
-            opener.addheaders.append(('Cookie', f'sid={frappe.session.sid}'))
+            opener.addheaders = [
+                ('User-Agent', 'Mozilla/6.0'),
+                ('Cookie', f'sid={frappe.session.sid}')
+            ]
             with opener.open(file_path) as f:
                 content = f.read()
         else:
@@ -115,7 +118,7 @@ class MyFile(File):
             frappe.throw(_("{0} is not a zip file").format(self.file_name))
 
         file_path = self.get_full_path()
-        
+
         if file_path.startswith("http"):
             opener = request.build_opener()
             opener.addheaders.append(('Cookie', f'sid={frappe.session.sid}'))

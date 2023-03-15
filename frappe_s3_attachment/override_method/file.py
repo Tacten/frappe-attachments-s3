@@ -106,7 +106,7 @@ class MyFile(File):
                 ('User-Agent', 'Mozilla/5.0'),
                 ('Cookie', f'sid={frappe.session.sid}')
             ]
-            frappe.msgprint(f'sid={frappe.session.sid}')
+            # frappe.msgprint(f'sid={frappe.session.sid}')
             with opener.open(file_path) as f:
                 content = f.read()
         else:

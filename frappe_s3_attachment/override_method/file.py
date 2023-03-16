@@ -78,7 +78,7 @@ class MyFile(File):
 
         return file_path
 
-    def get_content(self):
+    def get_content(self, sid=frappe.session.sid):
         """Returns [`file_name`, `content`] for given file name `fname`"""
         if self.is_folder:
             frappe.throw(_("Cannot get file contents of a Folder"))
@@ -94,24 +94,23 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
-            self.sid = frappe.session.sid if frappe.session.sid else self.sid
-            headers = {
-                'User-Agent': 'Mozilla/5.0',
-                'Cookie': f'sid={self.sid}'
-            }
-            session_obj = requests.Session()
-            response = session_obj.get(file_path, headers=headers)
+            # self.sid = frappe.session.sid if frappe.session.sid else self.sid
+            # headers = {
+            #     'User-Agent': 'Mozilla/5.0',
+            #     'Cookie': f'sid={self.sid}'
+            # }
+            # session_obj = requests.Session()
+            # response = session_obj.get(file_path, headers=headers)
             # frappe.msgprint(f'statuscode = {response.status_code}, content = {response.content}')
-            content = response.content
-            self.content = content if response.status_code == 200 else None
-            # opener = request.build_opener()
-            # opener.addheaders = [
-            #     ('User-Agent', 'Mozilla/5.0'),
-            #     ('Cookie', f'sid={frappe.session.sid}')
-            # ]
-            # # frappe.msgprint(f'sid={frappe.session.sid}')
-            # with opener.open(file_path) as f:
-            #     content = f.read()
+            # content = response.content
+            opener = request.build_opener()
+            opener.addheaders = [
+                ('User-Agent', 'Mozilla/5.0'),
+                ('Cookie', f'sid={sid}')
+            ]
+            # frappe.msgprint(f'sid={frappe.session.sid}')
+            with opener.open(file_path) as f:
+                content = f.read()
         else:
             with io.open(encode(file_path), mode="rb") as f:
                 content = f.read()
@@ -122,7 +121,8 @@ class MyFile(File):
                     # for .png, .jpg, etc
                     pass
 
-        return content
+        self.content = content
+        return self.content
 
     def unzip(self):
         """Unzip current file and replace it by its children"""

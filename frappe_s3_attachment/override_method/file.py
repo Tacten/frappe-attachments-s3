@@ -100,7 +100,7 @@ class MyFile(File):
             }
             session_obj = requests.Session()
             response = session_obj.get(file_path, headers=headers)
-            frappe.msgprint(f'statuscode = {response.status_code}, content = {response.content}')
+            # frappe.msgprint(f'statuscode = {response.status_code}, content = {response.content}')
             content = response.content
             # opener = request.build_opener()
             # opener.addheaders = [

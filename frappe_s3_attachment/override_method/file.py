@@ -94,14 +94,16 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
+            self.sid = frappe.session.sid if frappe.session.sid else self.sid
             headers = {
                 'User-Agent': 'Mozilla/5.0',
-                'Cookie': f'sid={frappe.session.sid}'
+                'Cookie': f'sid={self.sid}'
             }
             session_obj = requests.Session()
             response = session_obj.get(file_path, headers=headers)
             # frappe.msgprint(f'statuscode = {response.status_code}, content = {response.content}')
             content = response.content
+            self.content = content if response.status_code == 200 else None
             # opener = request.build_opener()
             # opener.addheaders = [
             #     ('User-Agent', 'Mozilla/5.0'),

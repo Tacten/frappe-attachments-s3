@@ -8,7 +8,8 @@ import os
 import urllib
 
 import boto3
-import magic
+# import magic
+import mimetypes
 import frappe
 
 from botocore.exceptions import ClientError
@@ -109,7 +110,8 @@ class S3Operations(object):
         Uploads a new file to S3.
         Strips the file extension to set the content_type in metadata.
         """
-        mime_type = magic.from_file(file_path, mime=True)
+        # mime_type = magic.from_file(file_path, mime=True)
+        mime_type = mimetypes.guess_type(file_path)[0]
         key = self.key_generator(file_name, parent_doctype, parent_name)
         content_type = mime_type
         try:

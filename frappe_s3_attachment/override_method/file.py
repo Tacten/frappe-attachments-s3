@@ -3,6 +3,7 @@ import os
 import io
 import zipfile
 from urllib import request
+from datetime import datetime
 
 from frappe.utils import (cint, encode, get_files_path, get_url)
 from frappe.core.doctype.file.file import (File, get_content_hash)
@@ -78,6 +79,11 @@ class MyFile(File):
         return file_path
 
     def get_content(self, sid=frappe.session.sid):
+        log = frappe.get_doc('EBDM Log')
+        log_message = f"{datetime.now()} self get_content, sid={sid}\n"
+        log.log = log.log + log_message if log.log else log_message
+        log.save()
+        frappe.db.commit()
         """Returns [`file_name`, `content`] for given file name `fname`"""
         if self.is_folder:
             frappe.throw(_("Cannot get file contents of a Folder"))
@@ -88,19 +94,40 @@ class MyFile(File):
         self.validate_url()
         file_path = self.get_full_path()
 
+        log_message = f"{datetime.now()} self get_content, file_path={file_path}\n"
+        log.log = log.log + log_message if log.log else log_message
+        log.save()
+        frappe.db.commit()
+        
         # read the file
         if PY2:
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
+            log_message = f"{datetime.now()} self get_content, startswith http file_path={file_path}\n"
+            log.log = log.log + log_message if log.log else log_message
+            log.save()
+            frappe.db.commit()
             opener = request.build_opener()
             opener.addheaders = [
                 ('User-Agent', 'Mozilla/5.0'),
                 ('Cookie', f'sid={sid}')
             ]
             # frappe.msgprint(f'file_path={file_path}\nsid={sid}')
+            log_message = f"{datetime.now()} self get_content, before open file_path\n"
+            log.log = log.log + log_message if log.log else log_message
+            log.save()
+            frappe.db.commit()
             with opener.open(file_path) as f:
+                log_message = f"{datetime.now()} self get_content, before read file content\n"
+                log.log = log.log + log_message if log.log else log_message
+                log.save()
+                frappe.db.commit()
                 content = f.read()
+                log_message = f"{datetime.now()} self get_content, after read file content\n"
+                log.log = log.log + log_message if log.log else log_message
+                log.save()
+                frappe.db.commit()
                 # frappe.msgprint(f'content={content}')
         else:
             with io.open(encode(file_path), mode="rb") as f:
@@ -111,7 +138,10 @@ class MyFile(File):
                 except UnicodeDecodeError:
                     # for .png, .jpg, etc
                     pass
-
+        log_message = f"{datetime.now()} self get_content, before set self content\n"
+        log.log = log.log + log_message if log.log else log_message
+        log.save()
+        frappe.db.commit()
         self.content = content
         return self.content
 

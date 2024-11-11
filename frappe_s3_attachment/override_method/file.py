@@ -3,6 +3,7 @@ import os
 import io
 import zipfile
 from urllib import request
+import ssl
 
 from frappe.utils import (cint, encode, get_files_path, get_url)
 from frappe.core.doctype.file.file import (File, get_content_hash)
@@ -93,13 +94,15 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
-            opener = request.build_opener()
-            opener.addheaders = [
-                ('User-Agent', 'Mozilla/5.0'),
-                ('Cookie', f'sid={sid}')
-            ]
-            frappe.msgprint(f'file_path={file_path}\nsid={sid}')
             try:
+                context = ssl._create_unverified_context()
+                https_handler = request.HTTPSHandler(context=context)
+                opener = request.build_opener(https_handler)
+                opener.addheaders = [
+                    ('User-Agent', 'Mozilla/5.0'),
+                    ('Cookie', f'sid={sid}')
+                ]
+                frappe.msgprint(f'file_path={file_path}\nsid={sid}')
                 with opener.open(file_path) as f:
                     content = f.read()
                 frappe.msgprint(f'content length = {len(content)}')

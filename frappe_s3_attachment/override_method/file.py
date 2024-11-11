@@ -98,10 +98,13 @@ class MyFile(File):
                 ('User-Agent', 'Mozilla/5.0'),
                 ('Cookie', f'sid={sid}')
             ]
-            # frappe.msgprint(f'file_path={file_path}\nsid={sid}')
-            with opener.open(file_path) as f:
-                content = f.read()
+            frappe.msgprint(f'file_path={file_path}\nsid={sid}')
+            try:
+                with opener.open(file_path) as f:
+                    content = f.read()
                 # frappe.msgprint(f'content={content}')
+            except:
+                pass
         else:
             with io.open(encode(file_path), mode="rb") as f:
                 content = f.read()

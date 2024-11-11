@@ -102,8 +102,9 @@ class MyFile(File):
             try:
                 with opener.open(file_path) as f:
                     content = f.read()
-                # frappe.msgprint(f'content={content}')
+                frappe.msgprint(f'content length = {len(content)}')
             except:
+                frappe.msgprint("can't open file")
                 pass
         else:
             with io.open(encode(file_path), mode="rb") as f:

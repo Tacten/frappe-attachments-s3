@@ -102,13 +102,14 @@ class MyFile(File):
                     ('User-Agent', 'Mozilla/5.0'),
                     ('Cookie', f'sid={sid}')
                 ]
-                frappe.msgprint(f'file_path={file_path}\nsid={sid}')
+                # frappe.msgprint(f'file_path={file_path}\nsid={sid}')
                 with opener.open(file_path) as f:
                     content = f.read()
-                frappe.msgprint(f'content length = {len(content)}')
+                # frappe.msgprint(f'content length = {len(content)}')
             except Exception as error:
                 frappe.msgprint(f"can't open file error = {error}")
-                frappe.log_error(e, f"can't open file error = {error}")
+                frappe.msgprint(f'file_path={file_path}\nsid={sid}')
+                frappe.log_error(e, f"can't open file error = {error}\nfile_path={file_path}\nsid={sid}")
         else:
             with io.open(encode(file_path), mode="rb") as f:
                 content = f.read()

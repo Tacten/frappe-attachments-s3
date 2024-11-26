@@ -103,6 +103,7 @@ class MyFile(File):
                     ('Cookie', f'sid={sid}')
                 ]
                 # frappe.msgprint(f'file_path={file_path}\nsid={sid}')
+                frappe.msgprint(f'before open file sid = {sid}')
                 with opener.open(file_path) as f:
                     content = f.read()
                 # frappe.msgprint(f'content length = {len(content)}')

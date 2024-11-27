@@ -95,6 +95,9 @@ class MyFile(File):
                 content = f.read()
         elif file_path.startswith("http"):
             success = True
+            if not sid:
+                frappe.msgprint('no sid')
+                sid = frappe.session.sid
             try:
                 frappe.msgprint(f'first sid={sid}')
                 context = ssl._create_unverified_context()
@@ -104,15 +107,11 @@ class MyFile(File):
                     ('User-Agent', 'Mozilla/5.0'),
                     ('Cookie', f'sid={sid}')
                 ]
-                # frappe.msgprint(f'file_path={file_path}\nsid={sid}')
-                frappe.msgprint(f'before open file sid = {sid}')
                 with opener.open(file_path) as f:
                     content = f.read()
-                # frappe.msgprint(f'content length = {len(content)}')
             except Exception as error:
                 success = False
-                frappe.msgprint(f"can't open file error = {error}")
-                frappe.msgprint(f'sid={sid}')
+                frappe.msgprint(f'error sid={sid}')
                 frappe.log_error(e, f"can't open file error = {error}\nfile_path={file_path}\nsid={sid}")
                 pass
             if not success:
@@ -125,12 +124,10 @@ class MyFile(File):
                         ('User-Agent', 'Mozilla/5.0'),
                         ('Cookie', f'sid={frappe.session.sid}')
                     ]
-                    frappe.msgprint(f'retry: before open file sid = {frappe.session.sid}')
                     with opener.open(file_path) as f:
                         content = f.read()
                 except Exception as error:
-                    frappe.msgprint(f"retry: can't open file error = {error}")
-                    frappe.msgprint(f'retry: sid={frappe.session.sid}')
+                    frappe.msgprint(f'retry error sid={frappe.session.sid}')
                     frappe.log_error(e, f"retry: can't open file error = {error}\nfile_path={file_path}\nsid={frappe.session.sid}")
                     pass
         else:

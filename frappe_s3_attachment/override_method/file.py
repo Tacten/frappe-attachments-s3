@@ -94,6 +94,7 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
+            success = True
             try:
                 context = ssl._create_unverified_context()
                 https_handler = request.HTTPSHandler(context=context)
@@ -108,9 +109,13 @@ class MyFile(File):
                     content = f.read()
                 # frappe.msgprint(f'content length = {len(content)}')
             except Exception as error:
+                success = False
                 frappe.msgprint(f"can't open file error = {error}")
                 frappe.msgprint(f'sid={sid}')
                 frappe.log_error(e, f"can't open file error = {error}\nfile_path={file_path}\nsid={sid}")
+                pass
+            if not success:
+                frappe.msgprint(f'retry sid={frappe.session.sid}')
                 try:
                     context = ssl._create_unverified_context()
                     https_handler = request.HTTPSHandler(context=context)
@@ -126,6 +131,7 @@ class MyFile(File):
                     frappe.msgprint(f"retry: can't open file error = {error}")
                     frappe.msgprint(f'retry: sid={frappe.session.sid}')
                     frappe.log_error(e, f"retry: can't open file error = {error}\nfile_path={file_path}\nsid={frappe.session.sid}")
+                    pass
         else:
             with io.open(encode(file_path), mode="rb") as f:
                 content = f.read()

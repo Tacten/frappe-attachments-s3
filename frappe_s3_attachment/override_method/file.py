@@ -78,7 +78,7 @@ class MyFile(File):
 
         return file_path
 
-    def get_content(self, sid=frappe.session.sid):
+    def get_content(self):
         """Returns [`file_name`, `content`] for given file name `fname`"""
         if self.is_folder:
             frappe.throw(_("Cannot get file contents of a Folder"))
@@ -94,13 +94,11 @@ class MyFile(File):
             with open(encode(file_path)) as f:
                 content = f.read()
         elif file_path.startswith("http"):
-            success = True
             try:
-                print(sid, frappe.session.sid)
-                frappe.msgprint(f'first sid={sid} session={frappe.session.sid}')
                 context = ssl._create_unverified_context()
                 https_handler = request.HTTPSHandler(context=context)
                 opener = request.build_opener(https_handler)
+                sid = frappe.session.sid
                 opener.addheaders = [
                     ('User-Agent', 'Mozilla/5.0'),
                     ('Cookie', f'sid={sid}')
@@ -108,26 +106,10 @@ class MyFile(File):
                 with opener.open(file_path) as f:
                     content = f.read()
             except Exception as error:
-                success = False
-                frappe.msgprint(f'error sid={sid}')
+                frappe.msgprint(f'error sid = {sid}')
+                frappe.msgprint(f'error frappe.session.sid = {frappe.session.sid}')
+                frappe.msgprint(f'error = {error}')
                 frappe.log_error(f"can't open file error = {error}\nfile_path={file_path}\nsid={sid}")
-                pass
-            if not success:
-                frappe.msgprint(f'retry sid={frappe.session.sid}')
-                try:
-                    context = ssl._create_unverified_context()
-                    https_handler = request.HTTPSHandler(context=context)
-                    opener = request.build_opener(https_handler)
-                    opener.addheaders = [
-                        ('User-Agent', 'Mozilla/5.0'),
-                        ('Cookie', f'sid={frappe.session.sid}')
-                    ]
-                    with opener.open(file_path) as f:
-                        content = f.read()
-                except Exception as error:
-                    frappe.msgprint(f'retry error sid={frappe.session.sid}')
-                    frappe.log_error(f"retry: can't open file error = {error}\nfile_path={file_path}\nsid={frappe.session.sid}")
-                    pass
         else:
             with io.open(encode(file_path), mode="rb") as f:
                 content = f.read()

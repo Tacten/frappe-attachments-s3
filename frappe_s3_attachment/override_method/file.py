@@ -78,7 +78,7 @@ class MyFile(File):
 
         return file_path
 
-    def get_content(self, sid=frappe.session.sid):
+    def get_content(self, sid):
         """Returns [`file_name`, `content`] for given file name `fname`"""
         if self.is_folder:
             frappe.throw(_("Cannot get file contents of a Folder"))
@@ -96,6 +96,7 @@ class MyFile(File):
         elif file_path.startswith("http"):
             success = True
             try:
+                frappe.msgprint(f'first sid={sid}')
                 context = ssl._create_unverified_context()
                 https_handler = request.HTTPSHandler(context=context)
                 opener = request.build_opener(https_handler)
